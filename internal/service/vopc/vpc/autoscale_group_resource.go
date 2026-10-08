@@ -364,10 +364,16 @@ func (r *AutoscaleGroupResource) Delete(ctx context.Context, req resource.Delete
 		return
 	}
 
+	asgIDInt, _ := strconv.ParseInt(state.ID.ValueString(), 10, 64)
+	vpcIDInt, _ := strconv.ParseInt(vpcID, 10, 64)
+	custIDInt, _ := strconv.ParseInt(r.customerID, 10, 64)
+
 	body := map[string]interface{}{
-		"id":          state.ID.ValueString(),
-		"vpc_id":      vpcID,
-		"customer_id": r.customerID,
+		"id":          asgIDInt,
+		"vpc_id":      vpcIDInt,
+		"vpcId":       vpcIDInt,
+		"customer_id": custIDInt,
+		"customerId":  custIDInt,
 	}
 	apiResp, diags := callAPI(ctx, r.client, pathAutoscaleGroupDelete, body)
 	if diags.HasError() {
@@ -413,9 +419,14 @@ func (r *AutoscaleGroupResource) readInto(ctx context.Context, m *AutoscaleGroup
 		vpcID = r.defaultVpcID
 	}
 
+	vpcIDInt, _ := strconv.ParseInt(vpcID, 10, 64)
+	custIDInt, _ := strconv.ParseInt(r.customerID, 10, 64)
+
 	body := map[string]interface{}{
-		"vpc_id":      vpcID,
-		"customer_id": r.customerID,
+		"vpc_id":      vpcIDInt,
+		"vpcId":       vpcIDInt,
+		"customer_id": custIDInt,
+		"customerId":  custIDInt,
 	}
 	apiResp, d := callAPI(ctx, r.client, pathAutoscaleGroupList, body)
 	if d.HasError() {
