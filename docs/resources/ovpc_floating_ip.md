@@ -24,9 +24,9 @@ resource "viettelidc_ovpc_floating_ip" "fip" {
 ### Associate an existing Floating IP directly to a Network Interface by ID
 
 ```terraform
-resource "viettelidc_ovpc_floating_ip" "bastion" {
+resource "viettelidc_ovpc_floating_ip" "nic_fip" {
   id                   = "5728"
-  network_interface_id = viettelidc_ovpc_network_interface.bastion.id
+  network_interface_id = viettelidc_ovpc_network_interface.nic.id
   vpc_id               = data.viettelidc_ovpc_vpc.main.id
 }
 ```
@@ -39,9 +39,9 @@ data "viettelidc_ovpc_floating_ip" "existing" {
   vpc_id    = data.viettelidc_ovpc_vpc.main.id
 }
 
-resource "viettelidc_ovpc_floating_ip" "bastion_by_ip" {
+resource "viettelidc_ovpc_floating_ip" "nic_fip_by_ip" {
   id                   = data.viettelidc_ovpc_floating_ip.existing.id
-  network_interface_id = viettelidc_ovpc_network_interface.bastion.id
+  network_interface_id = viettelidc_ovpc_network_interface.nic.id
   vpc_id               = data.viettelidc_ovpc_vpc.main.id
 }
 ```
