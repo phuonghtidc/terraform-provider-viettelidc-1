@@ -38,7 +38,7 @@ func callAPI(ctx context.Context, c *client.Client, path string, body map[string
 
 	// The API Gateway renames vpc_id→vpcId / customer_id→customerId
 	// but preserves the JSON type. Convert here so they are forwarded as integers.
-	for _, k := range []string{"id", "vpc_id", "customer_id", "vtt_subnet_id", "vtt_internet_gateway_id", "vtt_nat_id"} {
+	for _, k := range []string{"id", "vpc_id", "customer_id", "customerId", "vtt_subnet_id", "vtt_internet_gateway_id", "vtt_nat_id"} {
 		if v, ok := body[k]; ok {
 			if s, isStr := v.(string); isStr {
 				if n, err := strconv.Atoi(s); err == nil {
@@ -419,4 +419,62 @@ func defaultIfEmpty(value types.String, defaultVal string) string {
 		}
 	}
 	return defaultVal
+}
+
+// resolveLoadBalancerIDByName queries the load balancers in the specified VPC
+// and returns the ID of the load balancer matching lbName.
+func resolveLoadBalancerIDByName(ctx context.Context, c *client.Client, customerID string, vpcID int64, lbName string) (int64, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	body := map[string]interface{}{
+		"vpc_id":      vpcID,
+		"vpcId":       vpcID,
+		"customer_id": customerID,
+		"customerId":  customerID,
+		"pageIndex":   0,
+		"pageSize":    1000,
+		"filters":     []interface{}{},
+	}
+
+	apiResp, callDiags := callAPI(ctx, c, pathLoadBalancerList, body)
+	diags.Append(callDiags...)
+	if diags.HasError() {
+		return 0, diags
+	}
+
+	type lbItem struct {
+		VttLoadBalancerID int64  `json:"vttLoadBalancerId"`
+		Name              string `json:"name"`
+	}
+	var listResp struct {
+		Items []lbItem `json:"items"`
+	}
+	if err := json.Unmarshal(apiResp.Data, &listResp); err != nil {
+		diags.AddError("Parse Load Balancers Failed", err.Error())
+		return 0, diags
+	}
+
+	var matched []int64
+	for _, item := range listResp.Items {
+		if item.Name == lbName {
+			matched = append(matched, item.VttLoadBalancerID)
+		}
+	}
+
+	if len(matched) == 0 {
+		diags.AddError(
+			"Load Balancer Not Found",
+			fmt.Sprintf("No load balancer found with name %q in VPC %d", lbName, vpcID),
+		)
+		return 0, diags
+	}
+	if len(matched) > 1 {
+		diags.AddError(
+			"Multiple Load Balancers Found",
+			fmt.Sprintf("Found %d load balancers with name %q in VPC %d; please specify 'load_balancer_id' instead", len(matched), lbName, vpcID),
+		)
+		return 0, diags
+	}
+
+	return matched[0], diags
 }

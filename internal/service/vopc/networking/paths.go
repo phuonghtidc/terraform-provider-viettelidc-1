@@ -106,6 +106,8 @@ const (
 	pathLoadBalancerList        = "/csa/api/v1/networking/loadbalancer/list"
 	pathLoadBalancerListeners   = "/csa/api/v1/networking/loadbalancer/listener-by-lb/all"
 	pathLoadBalancerListenerDelete = "/csa/api/v1/networking/loadbalancer/listener/delete"
+	pathLoadBalancerListenerDetail = "/csa/api/v1/networking/loadbalancer/listener/detail"
+	pathLoadBalancerPoolDetail     = "/csa/api/v1/networking/loadbalancer/pool/detail"
 	pathLoadBalancerPoolDelete     = "/csa/api/v1/networking/loadbalancer/pool/delete"
 	pathLoadBalancerMonitorDelete  = "/csa/api/v1/networking/loadbalancer/monitor/delete"
 	pathLoadBalancerPools       = "/csa/api/v1/networking/loadbalancer/pool-by-lb/all"
@@ -128,6 +130,20 @@ const (
 	pathRegionHostsByCust  = "/csa/api/v1/region/list-host-by-customer"
 	pathRegionHostsByOrder = "/csa/api/v1/region/list-host-by-order"
 	pathVMTemplateList     = "/csa/api/v1/host-information/list-template"
+	// L7 Policy
+	pathL7PolicyCreate = "/csa/api/v1/networking/loadbalancer/listener/l7-policy/create"
+	pathL7PolicyUpdate = "/csa/api/v1/networking/loadbalancer/listener/l7-policy/update"
+	pathL7PolicyDelete = "/csa/api/v1/networking/loadbalancer/listener/l7-policy/delete"
+	pathL7PolicyDetail = "/csa/api/v1/networking/loadbalancer/listener/l7-policy/detail"
+	pathL7PolicyList   = "/csa/api/v1/networking/loadbalancer/listener/l7-policy/list"
+	pathL7PolicyPools  = "/csa/api/v1/networking/loadbalancer/listener/l7-policy/list-pool-available"
+
+	// L7 Rule
+	pathL7RuleCreate = "/csa/api/v1/networking/loadbalancer/listener/l7-rule/create"
+	pathL7RuleUpdate = "/csa/api/v1/networking/loadbalancer/listener/l7-rule/update"
+	pathL7RuleDelete = "/csa/api/v1/networking/loadbalancer/listener/l7-rule/delete"
+	pathL7RuleDetail = "/csa/api/v1/networking/loadbalancer/listener/l7-rule/detail"
+	pathL7RuleList   = "/csa/api/v1/networking/loadbalancer/listener/l7-rule/list"
 )
 
 // listWarningThreshold triggers a Diagnostics warning on list-style data
