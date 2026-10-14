@@ -38,7 +38,11 @@ func callAPI(ctx context.Context, c *client.Client, path string, body map[string
 
 	// The API Gateway renames vpc_id→vpcId / customer_id→customerId
 	// but preserves the JSON type. Convert here so they are forwarded as integers.
-	for _, k := range []string{"id", "vpc_id", "customer_id", "customerId", "vtt_subnet_id", "vtt_internet_gateway_id", "vtt_nat_id"} {
+	for _, k := range []string{
+		"id", "vpc_id", "customer_id", "customerId", "vtt_subnet_id", "vtt_internet_gateway_id", "vtt_nat_id",
+		"listener_id", "policy_id", "rule_id", "vttLoadBalancerListenerId", "vttLoadBalancerL7PolicyId",
+		"vttLoadBalancerL7RuleId", "vttLoadBalancerPoolId", "redirect_pool_id", "priority",
+	} {
 		if v, ok := body[k]; ok {
 			if s, isStr := v.(string); isStr {
 				if n, err := strconv.Atoi(s); err == nil {

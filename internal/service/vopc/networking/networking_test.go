@@ -430,3 +430,53 @@ func TestSubnetsList_DecodeAndCount(t *testing.T) {
 		t.Fatalf("decode: %v err=%v", items, err)
 	}
 }
+
+func TestCallAPI_IntegerNormalization(t *testing.T) {
+	t.Parallel()
+	var captured map[string]interface{}
+	srv := newFakeAPI(t)
+	srv.on("/test/normalize", func(body map[string]interface{}) (interface{}, string, interface{}) {
+		captured = body
+		return float64(0), "ok", nil
+	})
+
+	c := srv.newClient()
+	body := map[string]interface{}{
+		"listener_id":               "123",
+		"policy_id":                 "456",
+		"rule_id":                   "789",
+		"vttLoadBalancerListenerId": "1001",
+		"vttLoadBalancerL7PolicyId": "1002",
+		"vttLoadBalancerL7RuleId":   "1003",
+		"vttLoadBalancerPoolId":     "1004",
+		"redirect_pool_id":          "1005",
+		"priority":                  "10",
+	}
+	_, diags := callAPI(context.Background(), c, "/test/normalize", body)
+	if diags.HasError() {
+		t.Fatalf("unexpected diags: %v", diags)
+	}
+
+	expected := map[string]float64{
+		"listener_id":               123,
+		"policy_id":                 456,
+		"rule_id":                   789,
+		"vttLoadBalancerListenerId": 1001,
+		"vttLoadBalancerL7PolicyId": 1002,
+		"vttLoadBalancerL7RuleId":   1003,
+		"vttLoadBalancerPoolId":     1004,
+		"redirect_pool_id":          1005,
+		"priority":                  10,
+	}
+	for k, want := range expected {
+		got, ok := captured[k]
+		if !ok {
+			t.Errorf("missing key %s", k)
+			continue
+		}
+		// JSON unmarshaling into map[string]interface{} yields float64 for numbers
+		if got != want {
+			t.Errorf("key %s: got %v (%T), want %v", k, got, got, want)
+		}
+	}
+}
