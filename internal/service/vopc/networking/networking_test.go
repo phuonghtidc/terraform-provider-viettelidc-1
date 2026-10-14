@@ -431,64 +431,14 @@ func TestSubnetsList_DecodeAndCount(t *testing.T) {
 	}
 }
 
-func TestCallAPI_IntegerNormalization(t *testing.T) {
-	t.Parallel()
-	var captured map[string]interface{}
-	srv := newFakeAPI(t)
-	srv.on("/test/normalize", func(body map[string]interface{}) (interface{}, string, interface{}) {
-		captured = body
-		return float64(0), "ok", nil
-	})
-
-	c := srv.newClient()
-	body := map[string]interface{}{
-		"listener_id":               "123",
-		"policy_id":                 "456",
-		"rule_id":                   "789",
-		"vttLoadBalancerListenerId": "1001",
-		"vttLoadBalancerL7PolicyId": "1002",
-		"vttLoadBalancerL7RuleId":   "1003",
-		"vttLoadBalancerPoolId":     "1004",
-		"redirect_pool_id":          "1005",
-		"priority":                  "10",
-	}
-	_, diags := callAPI(context.Background(), c, "/test/normalize", body)
-	if diags.HasError() {
-		t.Fatalf("unexpected diags: %v", diags)
-	}
-
-	expected := map[string]float64{
-		"listener_id":               123,
-		"policy_id":                 456,
-		"rule_id":                   789,
-		"vttLoadBalancerListenerId": 1001,
-		"vttLoadBalancerL7PolicyId": 1002,
-		"vttLoadBalancerL7RuleId":   1003,
-		"vttLoadBalancerPoolId":     1004,
-		"redirect_pool_id":          1005,
-		"priority":                  10,
-	}
-	for k, want := range expected {
-		got, ok := captured[k]
-		if !ok {
-			t.Errorf("missing key %s", k)
-			continue
-		}
-		// JSON unmarshaling into map[string]interface{} yields float64 for numbers
-		if got != want {
-			t.Errorf("key %s: got %v (%T), want %v", k, got, got, want)
-		}
-	}
-}
-
 func TestNormalizePayload_DynamicSnakeToCamel(t *testing.T) {
 	t.Parallel()
 	in := map[string]interface{}{
-		"vpc_id":       "40784",
+		"vpc_id":       40784,
 		"redirect_url": "https://example.com/api",
 		"compare_type": "STARTS_WITH",
-		"listener_id":  "2567",
-		"priority":     "15",
+		"listener_id":  int64(2567),
+		"priority":     int64(15),
 	}
 	out := normalizePayload(in)
 
@@ -500,11 +450,11 @@ func TestNormalizePayload_DynamicSnakeToCamel(t *testing.T) {
 		t.Errorf("compareType = %v, want STARTS_WITH", out["compareType"])
 	}
 	if out["vpcId"] != 40784 {
-		t.Errorf("vpcId = %v (%T), want 40784 (int)", out["vpcId"], out["vpcId"])
+		t.Errorf("vpcId = %v, want 40784", out["vpcId"])
 	}
 	// Special Viettel IDC alias
-	if out["vttLoadBalancerListenerId"] != 2567 {
-		t.Errorf("vttLoadBalancerListenerId = %v (%T), want 2567 (int)", out["vttLoadBalancerListenerId"], out["vttLoadBalancerListenerId"])
+	if out["vttLoadBalancerListenerId"] != int64(2567) {
+		t.Errorf("vttLoadBalancerListenerId = %v, want 2567", out["vttLoadBalancerListenerId"])
 	}
 	// Original snake_case preserved
 	if out["vpc_id"] != 40784 {

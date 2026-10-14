@@ -57,39 +57,10 @@ func SnakeToCamel(s string) string {
 	return b.String()
 }
 
-var integerFieldKeys = map[string]bool{
-	"id":                        true,
-	"vpc_id":                    true,
-	"vpcId":                     true,
-	"customer_id":               true,
-	"customerId":                true,
-	"vtt_subnet_id":             true,
-	"vttSubnetId":               true,
-	"vtt_internet_gateway_id":   true,
-	"vttInternetGatewayId":      true,
-	"vtt_nat_id":                true,
-	"vttNatId":                  true,
-	"listener_id":               true,
-	"vttLoadBalancerListenerId": true,
-	"policy_id":                 true,
-	"vttLoadBalancerL7PolicyId": true,
-	"rule_id":                   true,
-	"vttLoadBalancerL7RuleId":   true,
-	"pool_id":                   true,
-	"redirect_pool_id":          true,
-	"vttLoadBalancerPoolId":     true,
-	"priority":                  true,
-	"port":                      true,
-	"page_index":                true,
-	"pageIndex":                 true,
-	"page_size":                 true,
-	"pageSize":                  true,
-}
-
 // normalizePayload dynamically transforms a request payload:
-// 1. Dynamically maps any snake_case key to camelCase.
-// 2. Injects special Viettel IDC aliases (vttLoadBalancer..., etc.).
-// 3. Converts numeric strings to integers for known integer fields.
+// 1. Dynamically maps any snake_case key to camelCase (e.g. redirect_url -> redirectUrl).
+// 2. Injects special Viettel IDC aliases (e.g. listener_id -> vttLoadBalancerListenerId).
+// Preserves the caller's exact data types (integers, strings, booleans, etc.).
 func normalizePayload(body map[string]interface{}) map[string]interface{} {
 	if body == nil {
 		return nil
@@ -97,16 +68,6 @@ func normalizePayload(body map[string]interface{}) map[string]interface{} {
 	out := make(map[string]interface{}, len(body)*2)
 	for k, v := range body {
 		out[k] = v
-
-		// Convert string numbers to integers for known integer fields
-		if integerFieldKeys[k] {
-			if s, isStr := v.(string); isStr {
-				if n, err := strconv.Atoi(s); err == nil {
-					v = n
-					out[k] = n
-				}
-			}
-		}
 
 		// Dynamically generate camelCase key if not already provided
 		camelKey := SnakeToCamel(k)
@@ -135,6 +96,15 @@ func normalizePayload(body map[string]interface{}) map[string]interface{} {
 func callAPI(ctx context.Context, c *client.Client, path string, body map[string]interface{}) (*client.APIResponse, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	body = normalizePayload(body)
+	for _, k := range []string{"id", "vpc_id", "customer_id", "vtt_subnet_id", "vtt_internet_gateway_id", "vtt_nat_id"} {
+		if v, ok := body[k]; ok {
+			if s, isStr := v.(string); isStr {
+				if n, err := strconv.Atoi(s); err == nil {
+					body[k] = n
+				}
+			}
+		}
+	}
 	raw, err := c.Do(ctx, path, body)
 	if err != nil {
 		// raw may still hold the response body for HTTP-level errors; try to
