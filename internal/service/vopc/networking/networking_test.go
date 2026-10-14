@@ -480,3 +480,34 @@ func TestCallAPI_IntegerNormalization(t *testing.T) {
 		}
 	}
 }
+
+func TestNormalizePayload_DynamicSnakeToCamel(t *testing.T) {
+	t.Parallel()
+	in := map[string]interface{}{
+		"vpc_id":       "40784",
+		"redirect_url": "https://example.com/api",
+		"compare_type": "STARTS_WITH",
+		"listener_id":  "2567",
+		"priority":     "15",
+	}
+	out := normalizePayload(in)
+
+	// Dynamic snake_case -> camelCase
+	if out["redirectUrl"] != "https://example.com/api" {
+		t.Errorf("redirectUrl = %v, want https://example.com/api", out["redirectUrl"])
+	}
+	if out["compareType"] != "STARTS_WITH" {
+		t.Errorf("compareType = %v, want STARTS_WITH", out["compareType"])
+	}
+	if out["vpcId"] != 40784 {
+		t.Errorf("vpcId = %v (%T), want 40784 (int)", out["vpcId"], out["vpcId"])
+	}
+	// Special Viettel IDC alias
+	if out["vttLoadBalancerListenerId"] != 2567 {
+		t.Errorf("vttLoadBalancerListenerId = %v (%T), want 2567 (int)", out["vttLoadBalancerListenerId"], out["vttLoadBalancerListenerId"])
+	}
+	// Original snake_case preserved
+	if out["vpc_id"] != 40784 {
+		t.Errorf("vpc_id = %v, want 40784", out["vpc_id"])
+	}
+}

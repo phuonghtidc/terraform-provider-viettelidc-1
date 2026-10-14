@@ -27,6 +27,105 @@ import (
 // refresh. Resources with their own budget (instance, volume) keep it.
 const asyncOpTimeout = 10 * time.Minute
 
+// specialVttAliases maps generic/snake_case field names to Viettel IDC's
+// specific API aliases (e.g. vtt prefixes or compound field names).
+var specialVttAliases = map[string]string{
+	"listener_id":         "vttLoadBalancerListenerId",
+	"policy_id":           "vttLoadBalancerL7PolicyId",
+	"rule_id":             "vttLoadBalancerL7RuleId",
+	"redirect_pool_id":    "vttLoadBalancerPoolId",
+	"pool_id":             "vttLoadBalancerPoolId",
+	"subnet_id":           "vttSubnetId",
+	"nat_id":              "vttNatId",
+	"internet_gateway_id": "vttInternetGatewayId",
+	"key":                 "ruleKey",
+}
+
+// SnakeToCamel converts snake_case to camelCase (e.g. "redirect_url" -> "redirectUrl", "vpc_id" -> "vpcId").
+func SnakeToCamel(s string) string {
+	if !strings.Contains(s, "_") {
+		return s
+	}
+	parts := strings.Split(s, "_")
+	var b strings.Builder
+	b.WriteString(parts[0])
+	for _, part := range parts[1:] {
+		if len(part) > 0 {
+			b.WriteString(strings.ToUpper(part[:1]) + part[1:])
+		}
+	}
+	return b.String()
+}
+
+var integerFieldKeys = map[string]bool{
+	"id":                        true,
+	"vpc_id":                    true,
+	"vpcId":                     true,
+	"customer_id":               true,
+	"customerId":                true,
+	"vtt_subnet_id":             true,
+	"vttSubnetId":               true,
+	"vtt_internet_gateway_id":   true,
+	"vttInternetGatewayId":      true,
+	"vtt_nat_id":                true,
+	"vttNatId":                  true,
+	"listener_id":               true,
+	"vttLoadBalancerListenerId": true,
+	"policy_id":                 true,
+	"vttLoadBalancerL7PolicyId": true,
+	"rule_id":                   true,
+	"vttLoadBalancerL7RuleId":   true,
+	"pool_id":                   true,
+	"redirect_pool_id":          true,
+	"vttLoadBalancerPoolId":     true,
+	"priority":                  true,
+	"port":                      true,
+	"page_index":                true,
+	"pageIndex":                 true,
+	"page_size":                 true,
+	"pageSize":                  true,
+}
+
+// normalizePayload dynamically transforms a request payload:
+// 1. Dynamically maps any snake_case key to camelCase.
+// 2. Injects special Viettel IDC aliases (vttLoadBalancer..., etc.).
+// 3. Converts numeric strings to integers for known integer fields.
+func normalizePayload(body map[string]interface{}) map[string]interface{} {
+	if body == nil {
+		return nil
+	}
+	out := make(map[string]interface{}, len(body)*2)
+	for k, v := range body {
+		out[k] = v
+
+		// Convert string numbers to integers for known integer fields
+		if integerFieldKeys[k] {
+			if s, isStr := v.(string); isStr {
+				if n, err := strconv.Atoi(s); err == nil {
+					v = n
+					out[k] = n
+				}
+			}
+		}
+
+		// Dynamically generate camelCase key if not already provided
+		camelKey := SnakeToCamel(k)
+		if camelKey != k {
+			if _, exists := body[camelKey]; !exists {
+				out[camelKey] = v
+			}
+		}
+
+		// Map special Viettel IDC aliases if not already provided
+		if vttKey, ok := specialVttAliases[k]; ok {
+			if _, exists := body[vttKey]; !exists {
+				out[vttKey] = v
+			}
+		}
+	}
+	return out
+}
+
 // callAPI performs a POST to a routed CSA endpoint, parses the standard
 // CSA envelope, and returns it. On transport error, parse error, or non-success
 // CSA code, an error diag is appended and the second return slot is non-empty.
@@ -35,23 +134,7 @@ const asyncOpTimeout = 10 * time.Minute
 // resp.Message to detect "not found" cases for idempotent Delete).
 func callAPI(ctx context.Context, c *client.Client, path string, body map[string]interface{}) (*client.APIResponse, diag.Diagnostics) {
 	var diags diag.Diagnostics
-
-	// The API Gateway renames vpc_id→vpcId / customer_id→customerId
-	// but preserves the JSON type. Convert here so they are forwarded as integers.
-	for _, k := range []string{
-		"id", "vpc_id", "customer_id", "customerId", "vtt_subnet_id", "vtt_internet_gateway_id", "vtt_nat_id",
-		"listener_id", "policy_id", "rule_id", "vttLoadBalancerListenerId", "vttLoadBalancerL7PolicyId",
-		"vttLoadBalancerL7RuleId", "vttLoadBalancerPoolId", "redirect_pool_id", "priority",
-	} {
-		if v, ok := body[k]; ok {
-			if s, isStr := v.(string); isStr {
-				if n, err := strconv.Atoi(s); err == nil {
-					body[k] = n
-				}
-			}
-		}
-	}
-
+	body = normalizePayload(body)
 	raw, err := c.Do(ctx, path, body)
 	if err != nil {
 		// raw may still hold the response body for HTTP-level errors; try to
