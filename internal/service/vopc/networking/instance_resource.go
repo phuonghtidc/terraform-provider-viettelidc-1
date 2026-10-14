@@ -90,7 +90,9 @@ func (r *InstanceResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				},
 			},
 			"name": schema.StringAttribute{
-				Computed: true,
+				Optional:    true,
+				Computed:    true,
+				Description: "Instance name. Optional on creation; can be updated in-place.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -317,9 +319,28 @@ func (r *InstanceResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
+	wantedName := plan.Name.ValueString()
+	if !plan.Name.IsNull() && !plan.Name.IsUnknown() && wantedName != "" {
+		vmIDInt, _ := strconv.ParseInt(vmID, 10, 64)
+		renameBody := map[string]interface{}{
+			"id":          vmIDInt,
+			"instance_id": vmIDInt,
+			"name":        wantedName,
+			"vpc_id":      vpcID,
+			"customer_id": r.customerID,
+		}
+		if _, diags := callAPI(ctx, r.client, pathVMRename, renameBody); diags.HasError() {
+			resp.Diagnostics.Append(diags...)
+			return
+		}
+	}
+
 	r.readInto(ctx, &plan, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+	if wantedName != "" {
+		plan.Name = types.StringValue(wantedName)
 	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -370,7 +391,22 @@ func (r *InstanceResource) Update(ctx context.Context, req resource.UpdateReques
 	if !plan.SecurityGroupIDs.Equal(state.SecurityGroupIDs) {
 		needsSGUpdate = true
 	}
+	needsRename := !plan.Name.IsNull() && !plan.Name.IsUnknown() && plan.Name.ValueString() != "" && !plan.Name.Equal(state.Name)
+	wantedName := plan.Name.ValueString()
 
+	if needsRename {
+		renameBody := map[string]interface{}{
+			"id":          vmIDInt,
+			"instance_id": vmIDInt,
+			"name":        wantedName,
+			"vpc_id":      vpcID,
+			"customer_id": r.customerID,
+		}
+		if _, diags := callAPI(ctx, r.client, pathVMRename, renameBody); diags.HasError() {
+			resp.Diagnostics.Append(diags...)
+			return
+		}
+	}
 	if needsResize {
 		stopBody := map[string]interface{}{
 			"instance_id": vmIDInt,
@@ -504,6 +540,9 @@ func (r *InstanceResource) Update(ctx context.Context, req resource.UpdateReques
 	r.readInto(ctx, &plan, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+	if needsRename {
+		plan.Name = types.StringValue(wantedName)
 	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }

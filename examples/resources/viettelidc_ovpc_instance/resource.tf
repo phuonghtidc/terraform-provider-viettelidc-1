@@ -4,6 +4,7 @@ data "viettelidc_ovpc_vm_templates" "ubuntu" {
 }
 
 resource "viettelidc_ovpc_instance" "vm" {
+  name               = "web-server"
   template_id        = tonumber(data.viettelidc_ovpc_vm_templates.ubuntu.templates[0].id)
   subnet_id          = viettelidc_ovpc_subnet.private.id
   admin_pass         = "MySecretPass123!"

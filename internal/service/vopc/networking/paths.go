@@ -69,6 +69,7 @@ const (
 	pathVMStop   = "/csa/api/v1/vm/stop"
 	pathVMStart  = "/csa/api/v1/vm/start"
 	pathVMUpdate = "/csa/api/v1/vm/update"
+	pathVMRename = "/csa/api/v1/vm/rename"
 	pathVMDelete = "/csa/api/v1/vm/delete"
 
 	pathVolumeCreate = "/csa/api/v1/storage/volume/create"
