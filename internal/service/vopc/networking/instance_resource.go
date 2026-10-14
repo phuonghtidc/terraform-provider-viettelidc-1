@@ -310,6 +310,7 @@ func (r *InstanceResource) Create(ctx context.Context, req resource.CreateReques
 	// Poll until POWERED_ON (this VPC uses POWERED_ON; other VPCs may use ACTIVE).
 	// The API Gateway renames instance_id→id before forwarding to API.
 	pollBody := map[string]interface{}{
+		"id":          vmID,
 		"instance_id": vmID,
 		"vpc_id":      vpcID,
 		"customer_id": r.customerID,
@@ -419,6 +420,7 @@ func (r *InstanceResource) Update(ctx context.Context, req resource.UpdateReques
 		}
 
 		pollBody := map[string]interface{}{
+			"id":          vmID,
 			"instance_id": vmID,
 			"vpc_id":      vpcID,
 			"customer_id": r.customerID,
@@ -581,6 +583,7 @@ func (r *InstanceResource) Delete(ctx context.Context, req resource.DeleteReques
 	} else {
 		// Wait until POWERED_OFF before deleting.
 		pollStopBody := map[string]interface{}{
+			"id":          vmID,
 			"instance_id": vmID,
 			"vpc_id":      vpcID,
 			"customer_id": r.customerID,
@@ -604,6 +607,7 @@ func (r *InstanceResource) Delete(ctx context.Context, req resource.DeleteReques
 
 	// Poll until the VM is gone (The API Gateway renames instance_id→id).
 	detailBody := map[string]interface{}{
+		"id":          vmID,
 		"instance_id": vmID,
 		"vpc_id":      vpcID,
 		"customer_id": r.customerID,
@@ -699,6 +703,7 @@ func (r *InstanceResource) readInto(ctx context.Context, m *InstanceResourceMode
 		vpcID = r.defaultVpcID
 	}
 	body := map[string]interface{}{
+		"id":          m.ID.ValueString(),
 		"instance_id": m.ID.ValueString(),
 		"vpc_id":      vpcID,
 		"customer_id": r.customerID,

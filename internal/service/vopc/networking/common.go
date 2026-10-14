@@ -97,16 +97,18 @@ func normalizePayload(body map[string]interface{}) map[string]interface{} {
 // resp.Message to detect "not found" cases for idempotent Delete).
 func callAPI(ctx context.Context, c *client.Client, path string, body map[string]interface{}) (*client.APIResponse, diag.Diagnostics) {
 	var diags diag.Diagnostics
-	body = normalizePayload(body)
-	for _, k := range []string{"id", "vpc_id", "customer_id", "vtt_subnet_id", "vtt_internet_gateway_id", "vtt_nat_id"} {
-		if v, ok := body[k]; ok {
-			if s, isStr := v.(string); isStr {
-				if n, err := strconv.Atoi(s); err == nil {
-					body[k] = n
+	if body != nil {
+		for _, k := range []string{"id", "vpc_id", "customer_id", "vtt_subnet_id", "vtt_internet_gateway_id", "vtt_nat_id"} {
+			if v, ok := body[k]; ok {
+				if s, isStr := v.(string); isStr {
+					if n, err := strconv.Atoi(s); err == nil {
+						body[k] = n
+					}
 				}
 			}
 		}
 	}
+	body = normalizePayload(body)
 	raw, err := c.Do(ctx, path, body)
 	if err != nil {
 		// raw may still hold the response body for HTTP-level errors; try to
