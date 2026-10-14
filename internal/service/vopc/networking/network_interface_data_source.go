@@ -77,7 +77,10 @@ func (d *NetworkInterfaceDataSource) Read(ctx context.Context, req datasource.Re
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	if cfg.ID.ValueString() == "" {
+	if cfg.ID.IsUnknown() {
+		return
+	}
+	if cfg.ID.IsNull() || cfg.ID.ValueString() == "" {
 		resp.Diagnostics.AddError("Missing required attribute", "'id' is required.")
 		return
 	}

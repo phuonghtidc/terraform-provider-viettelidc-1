@@ -94,6 +94,7 @@ func (d *FloatingIPDataSource) Read(ctx context.Context, req datasource.ReadRequ
 
 	if hasID {
 		body := map[string]interface{}{
+			"id":             cfg.ID.ValueString(),
 			"floating_ip_id": cfg.ID.ValueString(),
 			"vpc_id":         vpcID,
 			"customer_id":    d.customerID,
