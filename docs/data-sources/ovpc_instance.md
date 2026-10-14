@@ -29,7 +29,6 @@ data "viettelidc_ovpc_instance" "vm" {
 
 ### Read-Only
 
-- `availability_zone` (String)
 - `cpu` (Number)
 - `image_id` (String)
 - `image_name` (String)
