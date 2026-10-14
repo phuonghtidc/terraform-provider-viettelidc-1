@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -200,6 +201,7 @@ func (r *InstanceResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"storage_type": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
+				Default:     stringdefault.StaticString("HDD"),
 				Description: "Root volume storage type: \"SSD\" or \"HDD\". Defaults to \"HDD\".",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
@@ -599,6 +601,7 @@ func (r *InstanceResource) buildCreateBody(ctx context.Context, m *InstanceResou
 	if v := m.StorageType.ValueString(); v != "" {
 		storageType = v
 	}
+	m.StorageType = types.StringValue(storageType)
 	storageSize := m.Storage.ValueInt64()
 	instanceType := map[string]interface{}{
 		"storage":     storageSize,
@@ -797,7 +800,9 @@ func mapVMResponse(ctx context.Context, resp *client.APIResponse, m *InstanceRes
 	if m.KeyPairID.IsUnknown() {
 		m.KeyPairID = types.StringNull()
 	}
-
+	if m.StorageType.IsNull() || m.StorageType.IsUnknown() || m.StorageType.ValueString() == "" {
+		m.StorageType = types.StringValue("HDD")
+	}
 	// Extract image info.
 	if image, ok := data["image"].(map[string]interface{}); ok {
 		m.ImageID = types.StringValue(asIDString(image, "id"))

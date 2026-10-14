@@ -12,8 +12,13 @@ ViettelIDC Compute Instance (VM). NOTE: starting and stopping a VM is not expose
 ## Example Usage
 
 ```terraform
+data "viettelidc_ovpc_vm_templates" "ubuntu" {
+  name_filter = "Ubuntu 22.04"
+  vpc_id      = data.viettelidc_ovpc_vpc.main.id
+}
+
 resource "viettelidc_ovpc_instance" "vm" {
-  template_id        = 101
+  template_id        = tonumber(data.viettelidc_ovpc_vm_templates.ubuntu.templates[0].id)
   subnet_id          = viettelidc_ovpc_subnet.private.id
   admin_pass         = "MySecretPass123!"
   cpu                = 2
@@ -38,6 +43,7 @@ resource "viettelidc_ovpc_instance" "vm" {
 ### Optional
 
 - `admin_pass` (String, Sensitive) Initial admin password.
+- `availability_zone` (String) Availability zone.
 - `cpu` (Number) Number of vCPUs.
 - `instance_type_id` (Number) Instance type (package) integer ID.
 - `key_pair_id` (String) Key pair ID to inject into the instance. Resolved from key_pair_name when omitted — the create endpoint needs the id, and a name on its own makes the API try to create a new key pair (KEY_PAIR_EXISTED).

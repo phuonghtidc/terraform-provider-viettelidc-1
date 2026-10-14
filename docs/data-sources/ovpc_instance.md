@@ -13,7 +13,7 @@ Look up a ViettelIDC Instance by id or by name. Exactly one of `id` / `name` mus
 
 ```terraform
 data "viettelidc_ovpc_instance" "vm" {
-  id     = "vm-id"
+  name   = "web-server"
   vpc_id = data.viettelidc_ovpc_vpc.main.id
 }
 ```

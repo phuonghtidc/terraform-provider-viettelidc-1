@@ -157,6 +157,7 @@ resource "viettelidc_ovpc_load_balancer" "redirect_and_sni" {
 - `domain` (String) Domain name for the listener. Required if `enable_http_to_https_redirect` is true.
 - `enable_http_to_https_redirect` (Boolean) Automatically redirect HTTP traffic to HTTPS. Only valid when `listener_protocol` is HTTP. Defaults to false. Requires `domain` to be set.
 - `floating_ip_id` (String) ID of the floating IP to assign to the Load Balancer. Read back from the detail endpoint so removing it out-of-band shows as drift.
+- `ip_address` (String) Specific IP to bind listener to, or private IP of the Load Balancer.
 - `listener_name` (String) Name of the listener created with the Load Balancer. Defaults to <name>-listener.
 - `listener_port` (Number) Port the listener accepts traffic on. Defaults to 80.
 - `listener_protocol` (String) Protocol the listener accepts. TCP or UDP for a NETWORK TCP-UDP Load Balancer; HTTP, HTTPS or TERMINATED_HTTPS for an APPLICATION HTTP-HTTPS one. Use TERMINATED_HTTPS together with certificate_id to terminate TLS at the load balancer. Defaults to HTTP.
@@ -179,7 +180,6 @@ resource "viettelidc_ovpc_load_balancer" "redirect_and_sni" {
 ### Read-Only
 
 - `id` (String) Load Balancer ID assigned by the system (vttLoadBalancerId).
-- `ip_address` (String) Private IP the Load Balancer listens on, assigned at creation.
 - `is_public_loadbalancer` (Boolean) Whether the Load Balancer is reachable from the internet.
 - `listeners` (List of Object) List of listeners associated with the Load Balancer. (see [below for nested schema](#nestedatt--listeners))
 - `operating_status` (String) Operating status of the Load Balancer.
@@ -246,6 +246,7 @@ Read-Only:
 
 - `description` (String)
 - `id` (String)
+- `ip_address` (String)
 - `name` (String)
 - `protocol` (String)
 - `protocol_port` (Number)

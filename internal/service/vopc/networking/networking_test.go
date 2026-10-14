@@ -461,3 +461,26 @@ func TestNormalizePayload_DynamicSnakeToCamel(t *testing.T) {
 		t.Errorf("vpc_id = %v, want 40784", out["vpc_id"])
 	}
 }
+
+func TestFillNicDSFromMap_AndDecodeFloatingIPList(t *testing.T) {
+	t.Parallel()
+	var nic NetworkInterfaceDataSourceModel
+	fillNicDSFromMap(map[string]interface{}{
+		"id":           float64(9912),
+		"name":         "my-nic",
+		"vttSubnetId":  float64(10416),
+		"ipAssignType": "STATIC",
+		"primaryIp4":   "10.0.1.15",
+		"status":       "ACTIVE",
+	}, &nic)
+	if nic.ID.ValueString() != "9912" || nic.Name.ValueString() != "my-nic" || nic.IpAddress.ValueString() != "10.0.1.15" || nic.SubnetID.ValueString() != "10416" {
+		t.Fatalf("unexpected nic model: %+v", nic)
+	}
+
+	fips, err := decodeFloatingIPList(&client.APIResponse{
+		Data: json.RawMessage(`{"items":[{"vttFloatingId":5728,"publicIp":"1.2.3.4","name":"web-fip","status":"ACTIVE"}]}`),
+	})
+	if err != nil || len(fips) != 1 || fips[0].ID.ValueString() != "5728" || fips[0].Name.ValueString() != "web-fip" || fips[0].PublicIP.ValueString() != "1.2.3.4" {
+		t.Fatalf("unexpected fips: %+v err=%v", fips, err)
+	}
+}
