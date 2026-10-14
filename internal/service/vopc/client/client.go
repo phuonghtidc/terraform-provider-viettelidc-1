@@ -70,10 +70,7 @@ func (c *Client) Do(ctx context.Context, path string, body interface{}) ([]byte,
 		return nil, fmt.Errorf("api client: marshal body: %w", err)
 	}
 
-	url := path
-	if !strings.HasPrefix(path, "http://") && !strings.HasPrefix(path, "https://") {
-		url = c.baseURL + path
-	}
+	url := c.baseURL + path
 
 	var lastBody []byte
 	op := func() (int, error) {
@@ -125,10 +122,7 @@ func (c *Client) DoMethod(ctx context.Context, method, path string, body interfa
 		}
 	}
 
-	url := path
-	if !strings.HasPrefix(path, "http://") && !strings.HasPrefix(path, "https://") {
-		url = c.baseURL + path
-	}
+	url := c.baseURL + path
 
 	var lastBody []byte
 	op := func() (int, error) {

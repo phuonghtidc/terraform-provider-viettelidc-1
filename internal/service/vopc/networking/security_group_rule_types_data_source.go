@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -123,15 +122,14 @@ func (d *SGRuleTypesDataSource) Read(ctx context.Context, req datasource.ReadReq
 	}
 
 	body := map[string]interface{}{
-		"vpcId":      vpcID,
-		"customerId": d.customerID,
+		"vpc_id":      vpcID,
+		"vpcId":       vpcID,
+		"customer_id": d.customerID,
+		"customerId":  d.customerID,
 	}
 
 	// The rule/type endpoint returns a plain JSON array, not a wrapped APIResponse.
 	raw, err := d.client.Do(ctx, pathSGRuleTypes, body)
-	if err != nil && strings.Contains(err.Error(), "404") {
-		raw, err = d.client.Do(ctx, "https://api.viettelidc.com.vn"+pathSGRuleTypes, body)
-	}
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to list Security Group rule types", err.Error())
 		return

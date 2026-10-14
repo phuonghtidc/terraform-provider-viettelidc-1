@@ -38,7 +38,9 @@ var specialVttAliases = map[string]string{
 	"subnet_id":           "vttSubnetId",
 	"nat_id":              "vttNatId",
 	"internet_gateway_id": "vttInternetGatewayId",
-	"key":                 "ruleKey",
+	"key":                  "ruleKey",
+	"floating_ip_id":       "vttFloatingId",
+	"network_interface_id": "vttNetworkInterfaceId",
 }
 
 // SnakeToCamel converts snake_case to camelCase (e.g. "redirect_url" -> "redirectUrl", "vpc_id" -> "vpcId").
