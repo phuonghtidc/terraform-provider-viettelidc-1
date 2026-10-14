@@ -182,7 +182,9 @@ func mapFloatingIPDataSourceResponse(resp *client.APIResponse, m *FloatingIPData
 	if err := json.Unmarshal(resp.Data, &data); err != nil {
 		return fmt.Errorf("decode data: %w", err)
 	}
-	if ip := asString(data, "publicIp"); ip != "" {
+	if ip := asString(data, "floatingIp"); ip != "" {
+		m.PublicIP = types.StringValue(ip)
+	} else if ip := asString(data, "publicIp"); ip != "" {
 		m.PublicIP = types.StringValue(ip)
 	} else if ip := asString(data, "publicIP"); ip != "" {
 		m.PublicIP = types.StringValue(ip)
@@ -191,6 +193,8 @@ func mapFloatingIPDataSourceResponse(resp *client.APIResponse, m *FloatingIPData
 		m.InstanceID = types.StringValue(vmID)
 	}
 	if nicID := asString(data, "vttNetworkInterfaceId"); nicID != "" {
+		m.NetworkInterfaceID = types.StringValue(nicID)
+	} else if nicID := asString(data, "networkInterfaceForFloating"); nicID != "" {
 		m.NetworkInterfaceID = types.StringValue(nicID)
 	}
 	m.Name = types.StringValue(asString(data, "name"))
